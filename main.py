@@ -10,6 +10,7 @@ Usage (as the grader runs it):
 Writes entry.png (1024 x 1024) into MAKEFUN_OUTPUT_DIR, or /output.
 """
 
+import math
 import os
 import struct
 import zlib
@@ -103,11 +104,14 @@ class Canvas:
             self.px[i], self.px[i + 1], self.px[i + 2] = c
 
     def rect(self, x, y, w, h, c):
-        for yy in range(max(0, y), min(self.h, y + h)):
-            base = (yy * self.w + max(0, x)) * 3
-            for xx in range(max(0, x), min(self.w, x + w)):
-                i = base + (xx - max(0, x)) * 3
-                self.px[i], self.px[i + 1], self.px[i + 2] = c
+        x0, y0 = max(0, x), max(0, y)
+        x1, y1 = min(self.w, x + w), min(self.h, y + h)
+        if x1 <= x0 or y1 <= y0:
+            return
+        row = bytes(c) * (x1 - x0)
+        for yy in range(y0, y1):
+            i = (yy * self.w + x0) * 3
+            self.px[i:i + len(row)] = row
 
     def hline(self, x, y, w, c, t=1):
         self.rect(x, y, w, t, c)
@@ -261,16 +265,17 @@ def draw_bridge(cv, x, y, w, h, c, accent):
 
 
 def draw_summit(cv, cx, cy, r, cols):
-    # Four seats around a round table, one colour per leader.
+    # A round table with four solid chairs, initialled per leader.
+    letters = ["A", "J", "I", "U"]
     cv.circle(cx, cy, r, NAVY)
-    cv.circle(cx, cy, r - 6, CARD)
+    cv.circle(cx, cy, r - 5, CARD)
+    cv.circle(cx, cy, 5, GOLD)
     for i, col in enumerate(cols):
-        ang = 3.14159 * (0.25 + 0.5 * i)
-        import math
-        px = cx + int((r + 14) * math.cos(ang))
-        py = cy + int((r + 14) * math.sin(ang))
-        cv.circle(px, py, 11, col)
-        cv.circle(px, py, 5, WHITE)
+        ang = math.pi * (0.25 + 0.5 * i)
+        px = cx + int((r + 13) * math.cos(ang))
+        py = cy + int((r + 13) * math.sin(ang))
+        cv.circle(px, py, 10, col)
+        draw_text(cv, px - 2, py - 3, letters[i], 1, WHITE)
 
 
 def draw_chart(cv, x, y, w, h, c):
@@ -299,12 +304,15 @@ def draw_shield(cv, cx, cy, s, c):
 
 
 def draw_jet(cv, cx, cy, s, c):
-    cv.poly([(cx - 5 * s, cy), (cx + 5 * s, cy - s), (cx + 5 * s, cy + s)], c)
-    cv.poly([(cx - s, cy), (cx + 2 * s, cy - 4 * s), (cx + 3 * s, cy - 4 * s),
+    # A fighter in side view, nose to the right: swept wing, tail fin.
+    cv.poly([(cx, cy), (cx + 2 * s, cy + 4 * s), (cx + 3 * s, cy + 4 * s),
              (cx + 2 * s, cy)], c)
-    cv.poly([(cx - s, cy), (cx + 2 * s, cy + 4 * s), (cx + 3 * s, cy + 4 * s),
-             (cx + 2 * s, cy)], c)
-    cv.poly([(cx - 5 * s, cy), (cx - 3 * s, cy - 2 * s), (cx - 2 * s, cy)], c)
+    cv.poly([(cx - 4 * s, cy), (cx - 3 * s, cy - 3 * s),
+             (cx - 2 * s, cy - 3 * s), (cx - 2 * s, cy)], c)
+    cv.poly([(cx - 5 * s, cy), (cx - 2 * s, cy - s), (cx + 4 * s, cy - s // 2),
+             (cx + 6 * s, cy), (cx + 4 * s, cy + s // 2),
+             (cx - 2 * s, cy + s)], c)
+    cv.rect(cx + 3 * s, cy - s // 2, s, s // 2 + 1, WHITE)
 
 
 def card(cv, x, y, w, h, accent):
@@ -347,6 +355,8 @@ def build():
     draw_radar(cv, 760, 266, 30, NAVY)
     cv.rect(750, 290, 20, 10, NAVY)
     draw_drone(cv, 900, 232, 7, INK, RED)
+    for t in range(1, 9):
+        cv.circle(900 - t * 14, 232 + t * 4, 2, RED)
     draw_text(cv, 716, 340, "SHEIKH ISA BASE", 2, NAVY, bold=True)
     draw_text(cv, 716, 358, "BAHRAIN", 2, NAVY)
 
@@ -366,13 +376,13 @@ def build():
     # 3: Quad / Shenzhen
     card(cv, gx + gw + gap, gy, gw, gh, TEAL)
     kicker(cv, gx + gw + gap + 18, gy + 14, "3", "ASIA  -  DIPLOMACY", TEAL)
-    draw_text(cv, gx + gw + gap + 18, gy + 44, "QUAD MEETS IN MANILA;", 3, INK, bold=True)
+    draw_text(cv, gx + gw + gap + 18, gy + 44, "QUAD MEETS IN MANILA", 3, INK, bold=True)
     draw_text(cv, gx + gw + gap + 18, gy + 70, "SHENZHEN SUMMIT SET", 3, INK, bold=True)
     draw_deck(cv, gx + gw + gap + 18, gy + 104, "TRUMP, MODI, TAKAICHI AND "
               "ALBANESE MEET FOR THE FIRST TIME IN TWO YEARS. CHINA "
               "CONFIRMS A TRUMP-XI-PUTIN SUMMIT ON 19 NOVEMBER.",
               2, INK, 37, 19)
-    draw_summit(cv, gx + gw + gap + 428, gy + 50, 18,
+    draw_summit(cv, gx + gw + gap + 430, gy + 50, 20,
                 [RED, GOLD, NAVY, TEAL])
 
     # 4: Markets / Nvidia
@@ -381,8 +391,9 @@ def build():
     draw_text(cv, gx + 18, gy + gh + gap + 44, "STOCKS SLIDE AS", 3, INK, bold=True)
     draw_text(cv, gx + 18, gy + gh + gap + 70, "NVIDIA BEATS", 3, INK, bold=True)
     draw_deck(cv, gx + 18, gy + gh + gap + 104, "THE DOW FALLS ABOUT 850 "
-              "POINTS, A FOURTH STRAIGHT DOWN DAY. NVIDIA REVENUE JUMPS "
-              "103% TO $115.8BN AFTER THE BELL.", 2, INK, 37, 19)
+              "POINTS, ITS FOURTH STRAIGHT DROP. NVIDIA REVENUE JUMPS "
+              "103% TO $115.8BN IN ITS FIRST REPORT SINCE HUANG RESIGNED.",
+              2, INK, 37, 19)
     draw_chart(cv, gx + 300, gy + gh + gap + 18, 158, 74, RED)
 
     # 5: Cyberattack
@@ -391,8 +402,8 @@ def build():
     draw_text(cv, gx + gw + gap + 18, gy + gh + gap + 44, "HACK HITS 178 MAJOR", 3, INK, bold=True)
     draw_text(cv, gx + gw + gap + 18, gy + gh + gap + 70, "WEBSITES", 3, INK, bold=True)
     draw_deck(cv, gx + gw + gap + 18, gy + gh + gap + 104, "MALICIOUS CODE "
-              "SPREAD VIA OPTIMIZELY TARGETS BBC, CNN, ZOOM AND HSBC "
-              "VISITORS, SEEKING CARD AND CRYPTO DATA.", 2, INK, 37, 19)
+              "SPREAD VIA OPTIMIZELY HITS BBC, CNN, ZOOM AND HSBC, "
+              "SEEKING CARD AND CRYPTO DATA.", 2, INK, 37, 19)
     draw_shield(cv, gx + gw + gap + 400, gy + gh + gap + 52, 11, RED)
 
     # ---- story 6 strip: Japan airspace ----
@@ -400,8 +411,8 @@ def build():
     kicker(cv, 44, 844, "6", "ASIA  -  AIRSPACE", NAVY)
     draw_text(cv, 44, 874, "JAPAN SCRAMBLES JETS AS SUSPECTED RUSSIAN AIRCRAFT", 2, INK, bold=True)
     draw_text(cv, 44, 892, "VIOLATE ITS AIRSPACE; TOKYO PROTESTS STRONGLY.", 2, INK, bold=True)
-    draw_jet(cv, 920, 868, 6, NAVY)
-    draw_jet(cv, 850, 868, 5, GREY)
+    draw_jet(cv, 925, 866, 6, NAVY)
+    draw_jet(cv, 832, 866, 5, GREY)
 
     # ---- ticker: more of the day ----
     cv.rect(24, 924, 976, 52, INK)

@@ -6,7 +6,7 @@
 
 Draws one newspaper-style image summing up the world news of Tuesday 17 November 2026: Iran's drones targeting a U.S. radar system in Bahrain, Ukraine's strike on the Crimea bridge, the Quad meeting in Manila and the Shenzhen summit announcement, the stock slide and Nvidia's earnings beat, the Optimizely cyberattack on 178 major websites, and Japan scrambling jets after suspected Russian airspace violations.
 
-Everything is drawn in code. `main.py` uses only the Python standard library: a built-in 5x7 bitmap font for all text, rectangles, lines, circles and polygons for every picture element, and a hand-written PNG encoder (zlib + CRC chunks). No fonts, no image files, no network, no generated imagery. Two runs produce byte-identical output (verified: 22,986 bytes, 1024x1024 PNG).
+Everything is drawn in code. `main.py` uses only the Python standard library: a built-in 5x7 bitmap font for all text, rectangles, lines, circles and polygons for every picture element, and a hand-written PNG encoder (zlib + CRC chunks). No fonts, no image files, no network, no generated imagery. Two runs produce byte-identical output (verified: 23,127 bytes, 1024x1024 PNG).
 
 ## Run it
 
